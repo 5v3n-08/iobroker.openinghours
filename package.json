@@ -19,8 +19,7 @@
     "url": "https://github.com/5v3n-08/ioBroker.places"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.1.0",
-    "axios": "^0.19.2"
+    "@iobroker/adapter-core": "^2.1.0"
   },
   "devDependencies": {
     "@iobroker/testing": "^2.0.1",

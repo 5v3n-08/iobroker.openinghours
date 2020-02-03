@@ -7,7 +7,7 @@
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
 const utils = require('@iobroker/adapter-core');
-const axios = require('axios');
+// const axios = require('axios');
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -35,20 +35,20 @@ class Template extends utils.Adapter {
     async onReady() {
         const findPlaceURL = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json';
 
-        axios.get(findPlaceURL, {
-            params: {
-                input: 'NetteBad Nettetal',
-                inputtype: 'textquery',
-                fields: 'formatted_address,name,rating,opening_hours,place_id',
-                key: this.config.apiKey
-            }
-        }).then((response) => {
-            this.log.info(JSON.stringify(response));
-        }).catch((error) => {
-            this.log.info(JSON.stringify(error));
-        }).then(() => {
-            // always executed
-        }); 
+        // axios.get(findPlaceURL, {
+        //     params: {
+        //         input: 'NetteBad Nettetal',
+        //         inputtype: 'textquery',
+        //         fields: 'formatted_address,name,rating,opening_hours,place_id',
+        //         key: this.config.apiKey
+        //     }
+        // }).then((response) => {
+        //     this.log.info(JSON.stringify(response));
+        // }).catch((error) => {
+        //     this.log.info(JSON.stringify(error));
+        // }).then(() => {
+        //     // always executed
+        // }); 
 
         this.log.info('ready...');
 

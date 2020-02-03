@@ -35,7 +35,7 @@
         "readme": "https://github.com/5v3n-08/ioBroker.places/blob/master/README.md",
         "loglevel": "info",
         "mode": "schedule",
-        "schedule": "0,30 * * * *",
+        "schedule": "* * * * *",
         "type": "general",
         "compact": true,
         "materialize": true,

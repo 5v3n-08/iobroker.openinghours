@@ -1,12 +1,12 @@
 {
-  "name": "iobroker.template",
+  "name": "iobroker.places",
   "version": "0.0.1",
   "description": "Template for adapter development",
   "author": {
-    "name": "Author",
-    "email": "author@mail.com"
+    "name": "5v3n-08",
+    "email": "sven.stiels@icloud.com"
   },
-  "homepage": "https://github.com/Author/ioBroker.template",
+  "homepage": "https://github.com/5v3n-08/ioBroker.places",
   "license": "MIT",
   "keywords": [
     "ioBroker",
@@ -16,10 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Author/ioBroker.template"
+    "url": "https://github.com/5v3n-08/ioBroker.places"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.1.0"
+    "@iobroker/adapter-core": "^2.1.0",
+    "axios": "^0.19.2"
   },
   "devDependencies": {
     "@iobroker/testing": "^2.0.1",
@@ -31,7 +32,6 @@
     "@types/proxyquire": "^1.3.28",
     "@types/sinon": "^7.5.1",
     "@types/sinon-chai": "^3.2.3",
-    "axios": "^0.19.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^6.8.0",
@@ -51,7 +51,7 @@
     "lint": "eslint"
   },
   "bugs": {
-    "url": "https://github.com/Author/ioBroker.template/issues"
+    "url": "https://github.com/5v3n-08/ioBroker.places/issues"
   },
   "readmeFilename": "README.md"
 }

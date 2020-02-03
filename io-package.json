@@ -1,6 +1,6 @@
 {
     "common": {
-        "name": "places",
+        "name": "openinghours",
         "version": "0.0.1",
         "news": {
             "0.0.1": {
@@ -8,10 +8,10 @@
                 "de": "Erstveröffentlichung"
             }
         },
-        "title": "Places",
+        "title": "Opening Hours",
         "titleLang": {
-            "en": "Places",
-            "de": "Places"
+            "en": "Opening Hours",
+            "de": "Opening Hours"
         },
         "desc": {
             "en": "Template for adapter development",
@@ -31,8 +31,8 @@
         "main": "main.js",
         "icon": "template.png",
         "enabled": true,
-        "extIcon": "https://raw.githubusercontent.com/5v3n-08/ioBroker.places/master/admin/template.png",
-        "readme": "https://github.com/5v3n-08/ioBroker.places/blob/master/README.md",
+        "extIcon": "https://raw.githubusercontent.com/5v3n-08/ioBroker.openinghours/master/admin/template.png",
+        "readme": "https://github.com/5v3n-08/ioBroker.openinghours/blob/master/README.md",
         "loglevel": "info",
         "mode": "schedule",
         "schedule": "* * * * *",

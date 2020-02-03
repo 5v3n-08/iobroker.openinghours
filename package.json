@@ -1,12 +1,12 @@
 {
-  "name": "iobroker.places",
+  "name": "iobroker.openinghours",
   "version": "0.0.1",
   "description": "Template for adapter development",
   "author": {
     "name": "5v3n-08",
     "email": "sven.stiels@icloud.com"
   },
-  "homepage": "https://github.com/5v3n-08/ioBroker.places",
+  "homepage": "https://github.com/5v3n-08/ioBroker.openinghours",
   "license": "MIT",
   "keywords": [
     "ioBroker",
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/5v3n-08/ioBroker.places"
+    "url": "https://github.com/5v3n-08/ioBroker.openinghours"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^2.1.0"
@@ -50,7 +50,7 @@
     "lint": "eslint"
   },
   "bugs": {
-    "url": "https://github.com/5v3n-08/ioBroker.places/issues"
+    "url": "https://github.com/5v3n-08/ioBroker.openinghours/issues"
   },
   "readmeFilename": "README.md"
 }

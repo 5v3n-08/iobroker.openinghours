@@ -9,6 +9,7 @@
 const utils = require('@iobroker/adapter-core');
 const axios = require('axios').default;
 const _ = require('lodash');
+const moment = require('moment');
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -34,29 +35,9 @@ class Template extends utils.Adapter {
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady() {
-        const shops = ['NetteBad Nettetal', 'Kino Kaldenkirchen'];
-
-
-        // axios.get(findPlaceURL, {
-        //     params: {
-        //         input: 'NetteBad Nettetal',
-        //         inputtype: 'textquery',
-        //         fields: 'formatted_address,name,rating,opening_hours,place_id',
-        //         key: this.config.apiKey
-        //     }
-        // }).then((response) => {
-        //     this.log.info('response');
-        //     this.log.info(JSON.stringify(response.data));
-        // }).catch((error) => {
-        //     this.log.info('error');
-        //     this.log.info(JSON.stringify(error));
-        // }).then(() => {
-        //     // always executed
-        // }); 
-
-        
-        _.each(shops, (shop, index) => {
-            this.log.info('SHOP: ' + shop);
+        moment.locale('de');
+       
+        _.each(this.config.shops, (shop, index) => {
             this.setObjectNotExists(index + '.place_id', {
                 type: 'state',
                 common: {
@@ -72,18 +53,18 @@ class Template extends utils.Adapter {
 
             this.getState(index + '.place_id', (err, state) => {
                 if (!_.has(state, 'val')) {
-                    this.log.info('NO PLACE ID FOUND -> make request');
-                    this.getPlaceID(shop).then((response) => {
+                    this.getPlaceID(shop.name).then((response) => {
                         if (response) {
                             if (_.has(response, 'candidates') && !_.isEmpty(response.candidates)) {
                                 this.setState(index + '.place_id', response.candidates[0].place_id, true);
-                                this.log.info('SET PLACE ID: ' + response.candidates[0].place_id);
                             } else {
-                                this.log.info('No results for: ' + shop);
+                                this.log.info('No results for: ' + shop.name);
                             }
                         }
                     }).then(() => {
-                        this.getPlaceDetails(index);
+                        setTimeout(() => {
+                            this.getPlaceDetails(index);
+                        }, 1000);
                     });
                 } else {
                     this.getPlaceDetails(index);
@@ -154,9 +135,7 @@ class Template extends utils.Adapter {
 
 
     async getPlaceID (shop) {
-        const demoURL = 'https://reqres.in/api/users?page=2';
         const findPlaceURL = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json';
-
         try {
             const response = await axios.get(findPlaceURL, {
                 params: {
@@ -166,8 +145,6 @@ class Template extends utils.Adapter {
                     key: this.config.apiKey
                 }
             });
-            this.log.info(JSON.stringify(response.data));
-            // return {'candidates' : [{'place_id' : 'ChIJZXMagvlQx0cRTrrzj1KNwsI'}], 'status': 'OK'};
             return response.data;
         } catch (error) {
             this.log.info('error');
@@ -176,7 +153,6 @@ class Template extends utils.Adapter {
     }
 
     getPlaceDetails (index) {
-        const demoURL = 'https://reqres.in/api/users?page=2';
         const detailsPlaceURL = 'https://maps.googleapis.com/maps/api/place/details/json';
 
         this.getState(index + '.place_id', (err, state) => {
@@ -189,109 +165,6 @@ class Template extends utils.Adapter {
                         language: 'de'
                     }
                 }).then((response) => {
-                    const responseX = { 'data' : {
-                        'html_attributions': [],
-                        'result': {
-                            'formatted_address': 'Grenzwaldstraße 15A, 41334 Nettetal, Germany',
-                            'international_phone_number': '+49 2157 3575',
-                            'name': 'Corso Filmcasino',
-                            'place_id': 'ChIJZXMagvlQx0cRTrrzj1KNwsI',
-                            'rating': 4.7,
-                            'types': [
-                                'movie_theater',
-                                'point_of_interest',
-                                'establishment'
-                            ],
-                            'url': 'https://maps.google.com/?cid=14033934774581836366',
-                            'vicinity': 'Grenzwaldstraße 15A, Nettetal',
-                            'opening_hours': {
-                                'open_now': true,
-                                'periods': [
-                                    {
-                                        'close': {
-                                            'day': 0,
-                                            'time': '1700'
-                                        },
-                                        'open': {
-                                            'day': 0,
-                                            'time': '0900'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 1,
-                                            'time': '2045'
-                                        },
-                                        'open': {
-                                            'day': 1,
-                                            'time': '0845'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 2,
-                                            'time': '2100'
-                                        },
-                                        'open': {
-                                            'day': 2,
-                                            'time': '0700'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 3,
-                                            'time': '2100'
-                                        },
-                                        'open': {
-                                            'day': 3,
-                                            'time': '0700'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 4,
-                                            'time': '2100'
-                                        },
-                                        'open': {
-                                            'day': 4,
-                                            'time': '0700'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 5,
-                                            'time': '2100'
-                                        },
-                                        'open': {
-                                            'day': 5,
-                                            'time': '0700'
-                                        }
-                                    },
-                                    {
-                                        'close': {
-                                            'day': 6,
-                                            'time': '1600'
-                                        },
-                                        'open': {
-                                            'day': 6,
-                                            'time': '0900'
-                                        }
-                                    }
-                                ],
-                                'weekday_text': [
-                                    'Montag: 08:45–20:45 Uhr',
-                                    'Dienstag: 07:00–21:00 Uhr',
-                                    'Mittwoch: 07:00–21:00 Uhr',
-                                    'Donnerstag: 07:00–21:00 Uhr',
-                                    'Freitag: 07:00–21:00 Uhr',
-                                    'Samstag: 09:00–16:00 Uhr',
-                                    'Sonntag: 09:00–17:00 Uhr'
-                                ]
-                            },
-                        },
-                        'status': 'OK'
-                    }};
-
                     if (_.has(response, 'data') && _.has(response.data, 'result') && !_.isEmpty(response.data.result)) {
                         const types = [
                             { name: 'formatted_address', type: 'string', role: ''},
@@ -351,25 +224,73 @@ class Template extends utils.Adapter {
                                 this.setState(index + '.weekday_text', response.data.result.opening_hours.weekday_text, true);
                             }
 
-                            // if (_.has(response.data.result.opening_hours, 'periods')) {
-                            //     this.setObjectNotExists(index + '.weekday_text', {
-                            //         type: 'state',
-                            //         common: {
-                            //             name: 'weekday_text',
-                            //             type: 'array',
-                            //             role: '',
-                            //             read: true,
-                            //             write: false,
-                            //         },
-                            //         native: {}
-                            //     });
-                            //     this.setState(index + '.open_now', response.data.result.opening_hours.weekday_text, true);
-                            // }
+                            if (_.has(response.data.result.opening_hours, 'periods')) {
+                                this.setObjectNotExists(index + '.periods', {
+                                    type: 'channel',
+                                    common: {
+                                        name: 'periods'
+                                    },
+                                    native: {}
+                                });
+
+                                for (let i = 0; i < 7; i++) {
+                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i), {
+                                        type: 'channel',
+                                        common: {
+                                            name: this.getWeekDay(i)
+                                        },
+                                        native: {}
+                                    });
+                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i) + '.open', {
+                                        type: 'state',
+                                        common: {
+                                            name: 'open',
+                                            type: 'boolean',
+                                            role: '',
+                                            read: true,
+                                            write: false,
+                                            def: false
+                                        },
+                                        native: {}
+                                    });
+                                }
+
+                                const count = {};
+                                _.each(response.data.result.opening_hours.periods, (period) => {
+                                    if (_.has(count, this.getWeekDay(period.open.day))) {
+                                        count[this.getWeekDay(period.open.day)]++;
+                                    } else {
+                                        count[this.getWeekDay(period.open.day)] = 0;
+                                    }
+
+                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], {
+                                        type: 'state',
+                                        common: {
+                                            name: count[this.getWeekDay(period.open.day)],
+                                            type: 'string',
+                                            role: '',
+                                            read: true,
+                                            write: false,
+                                        },
+                                        native: {}
+                                    });
+
+                                    this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.open', true, true);
+                                    this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], this.getTime(period.open.time) + ' - ' + this.getTime(period.close.time), true);
+                                });
+                            }
                         }
                     }
                 });
             }
         });
+    }
+
+    getWeekDay (day) {
+        return moment().day(day).format('dddd');
+    }
+    getTime (time) {
+        return moment(time, 'HHmm').format('HH:mm');
     }
 }
 

@@ -57,7 +57,8 @@
         ]
     },
     "native": {
-        "apiKey": "AIzaSyCqSTgw8h80_2lZMFz72E9jeC_HEliuMLg"
+        "apiKey": "",
+        "shops": []
     },
     "objects": [],
     "instanceObjects": []

@@ -18,5 +18,9 @@ systemDictionary = {
         // 'en': 'Adapter settings for template',
         'de': 'Name des Geschäftes',
     },
+    'shop id': {
+        // 'en': 'Adapter settings for template',
+        'de': 'Geschäft ID (Optional)',
+    },
     
 };

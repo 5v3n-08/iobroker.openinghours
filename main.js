@@ -36,41 +36,64 @@ class Template extends utils.Adapter {
      */
     async onReady() {
         moment.locale('de');
-       
+
         _.each(this.config.shops, (shop, index) => {
-            this.setObjectNotExists(index + '.place_id', {
-                type: 'state',
-                common: {
-                    name: 'place_id',
-                    type: 'string',
-                    role: 'id',
-                    read: true,
-                    write: false,
-                },
-                native: {}
-            });
-
-
             this.getState(index + '.place_id', (err, state) => {
-                if (!_.has(state, 'val')) {
-                    this.getPlaceID(shop.name).then((response) => {
-                        if (response) {
-                            if (_.has(response, 'candidates') && !_.isEmpty(response.candidates)) {
-                                this.setState(index + '.place_id', response.candidates[0].place_id, true);
+                let place_id = null;
+                if (_.isEmpty(state)) {
+                    const matches = shop.name.trim().match(/[\S]{27}/);
+                    if (_.isEmpty(matches)) {
+                        this.log.info('MAKE REQEST GO GET ID OF: ' + shop.name);
+                        this.getPlaceID(shop.name).then((response) => {
+                            if (response && _.has(response, 'candidates') && !_.isEmpty(response.candidates)) {
+                                place_id = response.candidates[0].place_id;
+                            } else if (response && _.has(response, 'error_message')) {
+                                this.log.warn(shop.name + ': ' + response.error_message);
                             } else {
-                                this.log.info('No results for: ' + shop.name);
+                                this.log.info('ERROR: ' + shop.name);
                             }
-                        }
-                    }).then(() => {
-                        setTimeout(() => {
-                            this.getPlaceDetails(index);
-                        }, 1000);
-                    });
+                        });
+                    } else {
+                        place_id = _.first(matches);
+                    }
                 } else {
-                    this.getPlaceDetails(index);
+                    place_id = state.val;
                 }
+
+                setTimeout(() => { 
+                    if (place_id) {
+                        this.setObjectNotExists(index + '.place_id', {
+                            type: 'state',
+                            common: {
+                                name: 'place_id',
+                                type: 'string',
+                                role: 'id',
+                                read: true,
+                                write: false,
+                            },
+                            native: {}
+                        });
+                    }
+                    this.setState(index + '.place_id', place_id, true);
+                    this.log.info(shop.name + ': ' + place_id);
+                }, 10000);
+
+
+                setTimeout(() => {
+                    this.getPlaceDetails(place_id).then((response) => {
+                        if (response && _.has(response, 'error_message')) {
+                            this.log.warn(shop.name + ': ' + response.error_message);
+                        } else {
+                            this.mapResponse(response, index);
+                            this.initPeriods(response, index);
+                            this.mapPeriods(response, index);
+                        }
+                    });
+                }, 20000);
             });
         });
+
+        setTimeout(this.stop.bind(this), 50000);
     }
 
     /**
@@ -147,144 +170,178 @@ class Template extends utils.Adapter {
             });
             return response.data;
         } catch (error) {
-            this.log.info('error');
-            this.log.info(JSON.stringify(error.data));
+            this.log.info(JSON.stringify(error));
+        }
+        
+    }
+
+    async getPlaceDetails (place_id) {
+        const detailsPlaceURL = 'https://maps.googleapis.com/maps/api/place/details/json';
+        try {
+            const response = await axios.get(detailsPlaceURL, {
+                params: {
+                    place_id: place_id,
+                    fields: 'formatted_address,name,permanently_closed,place_id,type,opening_hours,international_phone_number,rating,website',
+                    key: this.config.apiKey,
+                    language: 'de'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            this.log.info(JSON.stringify(error));
+        }
+        
+    }
+
+
+    mapResponse (response, index) {
+        if (_.has(response, 'result') && !_.isEmpty(response.result)) {
+            const types = [
+                { name: 'formatted_address', type: 'string', role: ''},
+                { name: 'international_phone_number', type: 'string', role: ''},
+                { name: 'name', type: 'string', role: ''},
+                { name: 'rating', type: 'float', role: ''},
+                { name: 'types', type: 'array', role: ''},
+                { name: 'website', type: 'string', role: ''},
+                { name: 'permanently_closed', type: 'string', role: ''},
+            ];
+
+            _.each(types, (type) => {
+                if (_.has(response.result, type.name)) {
+                    this.setObjectNotExists(index + '.' + type.name, {
+                        type: 'state',
+                        common: {
+                            name: type.name,
+                            type: type.type,
+                            role: '',
+                            read: true,
+                            write: false,
+                        },
+                        native: {}
+                    });
+                    this.setState(index + '.' + type.name, response.result[type.name], true);
+                }
+            });
+
+            if (_.has(response.result, 'opening_hours')) {
+                if (_.has(response.result.opening_hours, 'open_now')) {
+                    this.setObjectNotExists(index + '.open_now', {
+                        type: 'state',
+                        common: {
+                            name: 'open_now',
+                            type: 'boolean',
+                            role: '',
+                            read: true,
+                            write: false,
+                        },
+                        native: {}
+                    });
+                    this.setState(index + '.open_now', response.result.opening_hours.open_now, true);
+                }
+
+                if (_.has(response.result.opening_hours, 'weekday_text')) {
+                    this.setObjectNotExists(index + '.weekday_text', {
+                        type: 'state',
+                        common: {
+                            name: 'weekday_text',
+                            type: 'array',
+                            role: '',
+                            read: true,
+                            write: false,
+                        },
+                        native: {}
+                    });
+                    this.setState(index + '.weekday_text', response.result.opening_hours.weekday_text, true);
+                }
+            }
         }
     }
 
-    getPlaceDetails (index) {
-        const detailsPlaceURL = 'https://maps.googleapis.com/maps/api/place/details/json';
+    initPeriods (response, index) {
+        if (_.has(response.result.opening_hours, 'periods')) {
+            this.setObjectNotExists(index + '.periods', {
+                type: 'channel',
+                common: {
+                    name: 'periods'
+                },
+                native: {}
+            });
 
-        this.getState(index + '.place_id', (err, state) => {
-            if (state && _.has(state, 'val') && state.val) {
-                axios.get(detailsPlaceURL, {
-                    params: {
-                        place_id: state.val,
-                        fields: 'formatted_address,name,permanently_closed,place_id,type,opening_hours,website,international_phone_number,rating',
-                        key: this.config.apiKey,
-                        language: 'de'
-                    }
-                }).then((response) => {
-                    if (_.has(response, 'data') && _.has(response.data, 'result') && !_.isEmpty(response.data.result)) {
-                        const types = [
-                            { name: 'formatted_address', type: 'string', role: ''},
-                            { name: 'international_phone_number', type: 'string', role: ''},
-                            { name: 'name', type: 'string', role: ''},
-                            { name: 'rating', type: 'float', role: ''},
-                            { name: 'types', type: 'array', role: ''},
-                            { name: 'website', type: 'string', role: ''},
-                            { name: 'permanently_closed', type: 'string', role: ''},
-                            
-                        ];
-
-                        _.each(types, (type) => {
-                            if (_.has(response.data.result, type.name)) {
-                                this.setObjectNotExists(index + '.' + type.name, {
-                                    type: 'state',
-                                    common: {
-                                        name: type.name,
-                                        type: type.type,
-                                        role: '',
-                                        read: true,
-                                        write: false,
-                                    },
-                                    native: {}
-                                });
-                                this.setState(index + '.' + type.name, response.data.result[type.name], true);
-                            }
-                        });
-
-                        if (_.has(response.data.result, 'opening_hours')) {
-                            if (_.has(response.data.result.opening_hours, 'open_now')) {
-                                this.setObjectNotExists(index + '.open_now', {
-                                    type: 'state',
-                                    common: {
-                                        name: 'open_now',
-                                        type: 'boolean',
-                                        role: '',
-                                        read: true,
-                                        write: false,
-                                    },
-                                    native: {}
-                                });
-                                this.setState(index + '.open_now', response.data.result.opening_hours.open_now, true);
-                            }
-                            if (_.has(response.data.result.opening_hours, 'weekday_text')) {
-                                this.setObjectNotExists(index + '.weekday_text', {
-                                    type: 'state',
-                                    common: {
-                                        name: 'weekday_text',
-                                        type: 'array',
-                                        role: '',
-                                        read: true,
-                                        write: false,
-                                    },
-                                    native: {}
-                                });
-                                this.setState(index + '.weekday_text', response.data.result.opening_hours.weekday_text, true);
-                            }
-
-                            if (_.has(response.data.result.opening_hours, 'periods')) {
-                                this.setObjectNotExists(index + '.periods', {
-                                    type: 'channel',
-                                    common: {
-                                        name: 'periods'
-                                    },
-                                    native: {}
-                                });
-
-                                for (let i = 0; i < 7; i++) {
-                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i), {
-                                        type: 'channel',
-                                        common: {
-                                            name: this.getWeekDay(i)
-                                        },
-                                        native: {}
-                                    });
-                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i) + '.open', {
-                                        type: 'state',
-                                        common: {
-                                            name: 'open',
-                                            type: 'boolean',
-                                            role: '',
-                                            read: true,
-                                            write: false,
-                                            def: false
-                                        },
-                                        native: {}
-                                    });
-                                }
-
-                                const count = {};
-                                _.each(response.data.result.opening_hours.periods, (period) => {
-                                    if (_.has(count, this.getWeekDay(period.open.day))) {
-                                        count[this.getWeekDay(period.open.day)]++;
-                                    } else {
-                                        count[this.getWeekDay(period.open.day)] = 0;
-                                    }
-
-                                    this.setObjectNotExists(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], {
-                                        type: 'state',
-                                        common: {
-                                            name: count[this.getWeekDay(period.open.day)],
-                                            type: 'string',
-                                            role: '',
-                                            read: true,
-                                            write: false,
-                                        },
-                                        native: {}
-                                    });
-
-                                    this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.open', true, true);
-                                    this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], this.getTime(period.open.time) + ' - ' + this.getTime(period.close.time), true);
-                                });
-                            }
-                        }
-                    }
+            for (let i = 0; i < 7; i++) {
+                this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i), {
+                    type: 'channel',
+                    common: {
+                        name: this.getWeekDay(i)
+                    },
+                    native: {}
+                });
+                this.setObjectNotExists(index + '.periods.' + this.getWeekDay(i) + '.open', {
+                    type: 'state',
+                    common: {
+                        name: 'open',
+                        type: 'boolean',
+                        role: '',
+                        read: true,
+                        write: false,
+                        def: false
+                    },
+                    native: {}
                 });
             }
+
+            this.setObjectNotExists(index + '.periods.today', {
+                type: 'channel',
+                common: {
+                    name: 'today'
+                },
+                native: {}
+            });
+            this.setObjectNotExists(index + '.periods.today.open', {
+                type: 'state',
+                common: {
+                    name: 'open',
+                    type: 'boolean',
+                    role: '',
+                    read: true,
+                    write: false,
+                },
+                native: {}
+            });
+
+
+        }
+    }
+
+    mapPeriods (response, index) {
+        const count = {};
+        _.each(response.result.opening_hours.periods, (period) => {
+            if (_.has(count, this.getWeekDay(period.open.day))) {
+                count[this.getWeekDay(period.open.day)]++;
+            } else {
+                count[this.getWeekDay(period.open.day)] = 0;
+            }
+
+            this.setObjectNotExists(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], {
+                type: 'state',
+                common: {
+                    name: count[this.getWeekDay(period.open.day)],
+                    type: 'string',
+                    role: '',
+                    read: true,
+                    write: false,
+                },
+                native: {}
+            });
+
+            if (moment().format('dddd') == this.getWeekDay(period.open.day)) {
+                this.setState(index + '.periods.today.open', true, true);
+                this.setState(index + '.periods.today.' + count[this.getWeekDay(period.open.day)], this.getTime(period.open.time) + ' - ' + this.getTime(period.close.time), true);
+            }
+            this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.open', true, true);
+            this.setState(index + '.periods.' + this.getWeekDay(period.open.day) + '.' + count[this.getWeekDay(period.open.day)], this.getTime(period.open.time) + ' - ' + this.getTime(period.close.time), true);
         });
     }
+
 
     getWeekDay (day) {
         return moment().day(day).format('dddd');

@@ -37,6 +37,7 @@
         "mode": "schedule",
         "schedule": "* * * * *",
         "type": "general",
+        "allowInit": true,
         "compact": true,
         "materialize": true,
         "materializeTab": true,
